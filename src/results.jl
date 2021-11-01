@@ -1,6 +1,5 @@
 using CSV, JuliaDB
 
-
 function results(obj, cost, tempo, path, B, L)
 
     array_obj = [obj]
