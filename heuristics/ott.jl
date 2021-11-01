@@ -1,6 +1,5 @@
 using LightGraphs, Random, GraphPlot
 
-include("../read.jl")
 include("../src/utils.jl")
 include("params.jl")
 
@@ -59,8 +58,8 @@ function OTT(ins::model_params, hp::heuristic_params, initial_node::Int64)
     end 
 end
 
-function distance(s_tree, node::Int64)
-    aux = gdistances(s_tree, node)
+function distance(node::Int64)
+    aux = gdistances(hp.spanTree, node)
     filter!(e->e≠9223372036854775807, aux)
     return maximum(aux)
 end
