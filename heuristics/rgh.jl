@@ -1,21 +1,10 @@
 using LightGraphs, Random
 
-
-# mutable struct heuristic_params{F<:Float64, S<:String, I<:Int64}
-#     spanTree::SimpleGraph{I}
-#     spanCost::F
-#     tree_diameter::I
-#     which_heuristic::S
-# end
-
 include("../src/read.jl")
 include("params.jl")
 include("../src/utils.jl")
 
-
-ins = read_from_files(g_params.file_name)
 ins.B = 252
-
 
 function rgh(ins::model_params, hp::heuristic_params)
     hp.spanTree = readGraph(ins)

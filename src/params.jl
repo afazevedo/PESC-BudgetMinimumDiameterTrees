@@ -22,7 +22,7 @@ end
 type_of_tree = "spanning"
 file = pwd()*"\\instances\\$type_of_tree\\c_v15_a105_d4.txt"
 # file = pwd()*"\\instances\\spanning\\c_v25_a300_d4.txt"
-eps = 0.0001
+eps = 0.00001
 time_limit = 1200
 type_of_model = "mcf"
 warm_start = 0

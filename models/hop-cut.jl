@@ -1,14 +1,13 @@
-include("../params.jl")
-include("../read.jl")
+include("../src/params.jl")
+include("../src/read.jl")
+include("../heuristics/params.jl")
+include("../src/utils.jl")
+include("../heuristics/rgh.jl")
 
 using Gurobi, JuMP, MathOptInterface, LightGraphs, LightGraphsFlows, GraphPlot
 
-function plotGraph(graph)
-    nodelabel = 1:nv(graph)
-    p = gplot(graph, nodelabel = nodelabel)
-    display(p)
-end
-
+g_params.file_name = pwd()*"\\instances\\$type_of_tree\\c_v10_a45_d4.txt"
+# g_params.file_name = pwd()*"\\instances\\toy.txt"
 ins = read_from_files(g_params.file_name)
 
 function my_callback_function(cb_data)    
@@ -18,27 +17,27 @@ function my_callback_function(cb_data)
     num_nodes = (ins.n)*ins.L+1
     graph = LightGraphs.DiGraph(num_nodes)
     source = num_nodes
-
     capacity_matrix = zeros(num_nodes, num_nodes)
 
-    # Adicionando aresta do vértice artificial para os vértices da primeira camada
+    # Adicionando aresta do vértice artificial para os vértices da primeira camada (A_0)
     for j in V
         add_edge!(graph, source, j)
         capacity_matrix[source, j] = callback_value(cb_data, x_g[1, ins.n+1, j])
         # println("Aresta Grupo 1: [", source, "->", j, "] : ", capacity_matrix[source, j]) 
     end 
 
-
+    # Adicionando arestas do grupo A_1
     for h in 2:ins.L
         for i in 1:ins.n
             for j in 1:ins.n
                 add_edge!(graph, (h-2)*ins.n + i, (h-1)*ins.n + j)   
-                capacity_matrix[(h-2)*ins.n + i, (h-1)*ins.n + j]  = callback_value(cb_data, x_g[h, i, j])     
+                capacity_matrix[(h-2)*ins.n + i, (h-1)*ins.n + j] = callback_value(cb_data, x_g[h, i, j])     
                 # println("Aresta Grupo 2: [", (h-2)*ins.n + i, "->", (h-1)*ins.n + j, "] : ", capacity_matrix[(h-2)*ins.n + i, (h-1)*ins.n + j]) 
             end 
         end
     end
 
+    # Adicionando arestas do grupo A_2
     for h in 2:ins.L
         for i in 1:ins.n
             node_i = (h-2)*ins.n + i
@@ -50,13 +49,9 @@ function my_callback_function(cb_data)
     end 
     
     for t in 1:ins.n   
-        subtour = []
-        complementary = []
-        flow_value = -1 
         subtour, complementary, flow_value = LightGraphsFlows.mincut(graph, source, (H-2)*ins.n + t, capacity_matrix, EdmondsKarpAlgorithm())
         result = zeros(H, ins.n+1, ins.n)
 
-       
         if flow_value < 1 - g_params.eps
             for u in subtour
                 for v in complementary
@@ -86,36 +81,29 @@ function my_callback_function(cb_data)
                     end 
                 end 
             end 
-            
-            # println(capacity_matrix[11,18])
-            # println("Flow_value $(t):", flow_value)
-            # println("Subtour:", subtour)
-            # println("Complementary", complementary)
-
+    
             con = @build_constraint(sum(x_g[h,i,j] for h in 1:H, i in V0, j in V if result[h,i,j] == 1) >= 1)
-            println("Adding $(con) para t=$(t)")
+            # println("Adding $(con) para t=$(t)")
             MOI.submit(model, MOI.LazyConstraint(cb_data), con)
         end   
     end 
-    println("===============")
 end
 
 # Inicialização de um modelo 
-
 model = Model(Gurobi.Optimizer)
 
 # Atributos do modelo
 MOI.set(model, MOI.RawParameter("LazyConstraints"), 1)
-MOI.set(model, MOI.LazyConstraintCallback(), my_callback_function)
 set_optimizer_attribute(model, "Cuts", 0)
 set_optimizer_attribute(model, "Presolve", 0)
 set_optimizer_attribute(model, "Heuristics", 0)
 set_optimizer_attribute(model, "Threads", 1)
-set_optimizer_attribute(model, "OutputFlag", 0)
-# set_optimizer_attribute(model, "NodeLimit", 1)
+# set_optimizer_attribute(model, "OutputFlag", 0)
 
+# ins.L = ins.L + 1 # Para que o número de camadas seja par
 
-ins.L = 2
+ins.L = 3
+
 #Conjuntos
 V = 1:ins.n
 V0 = 1:ins.n+1
@@ -134,20 +122,16 @@ H = 1:ins.L+1
 
 @constraint(model, bind_arc[i in V, j in V; i != j], x[i,j] == sum(x_g[h,i,j] for h in 2:ins.L))
 
-
 for i in 1:ins.n
     for j in 1:ins.n
-        if ins.c[i,j] <= 0 
-            for h in 1:ins.L+1 
-                if (h == 1 && i == ins.n+1) || (h > 1 && i != ins.n+1)
-                    set_upper_bound(x_g[h,i,j], 0.0)
-                    set_lower_bound(x_g[h,i,j], 0.0)
-                end 
-            end
-        end
-    end
-end
+        if i != j && ins.c[i,j] <= 0 
+            set_upper_bound(x[i,j], 0.0)
+            set_lower_bound(x[i,j], 0.0)
+        end 
+    end 
+end 
 
+MOI.set(model, MOI.LazyConstraintCallback(), my_callback_function)
 optimize!(model)
 
 for i in 1:ins.n+1
@@ -158,6 +142,9 @@ for i in 1:ins.n+1
     end 
 end 
 
+objective_value(model)
+
+
 for h in 1:ins.L+1
     for i in 1:ins.n+1
         for j in 1:ins.n
@@ -167,5 +154,3 @@ for h in 1:ins.L+1
         end 
     end 
 end 
-
-objective_value(model)
