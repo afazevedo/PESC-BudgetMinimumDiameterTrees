@@ -6,8 +6,8 @@ include("../heuristics/rgh.jl")
 
 using Gurobi, JuMP, MathOptInterface, LightGraphs, LightGraphsFlows, GraphPlot
 
-g_params.file_name = pwd()*"\\instances\\$type_of_tree\\c_v10_a45_d4.txt"
-# g_params.file_name = pwd()*"\\instances\\toy.txt"
+# g_params.file_name = pwd()*"\\instances\\$type_of_tree\\c_v10_a45_d4.txt"
+g_params.file_name = pwd()*"\\instances\\toy.txt"
 ins = read_from_files(g_params.file_name)
 
 function my_callback_function(cb_data)    
@@ -95,32 +95,52 @@ model = Model(Gurobi.Optimizer)
 # Atributos do modelo
 MOI.set(model, MOI.RawParameter("LazyConstraints"), 1)
 set_optimizer_attribute(model, "Cuts", 0)
-set_optimizer_attribute(model, "Presolve", 0)
-set_optimizer_attribute(model, "Heuristics", 0)
-set_optimizer_attribute(model, "Threads", 1)
+# set_optimizer_attribute(model, "Presolve", 0)
+# set_optimizer_attribute(model, "Heuristics", 0)
+# set_optimizer_attribute(model, "Threads", 1)
 # set_optimizer_attribute(model, "OutputFlag", 0)
 
 # ins.L = ins.L + 1 # Para que o número de camadas seja par
 
-ins.L = 3
+ins.L = 4
 
 #Conjuntos
 V = 1:ins.n
 V0 = 1:ins.n+1
 H = 1:ins.L+1
+ins.B = 16
 
 # Definição das variáveis de decisão
 @variable(model, x[i in 1:ins.n+1, j in 1:ins.n; i != j], Bin)
 
+@variable(model, z, Bin)
+
+@variable(model, 0 <= w[i in V, j in V] <= 1, Int)
+
+@variable(model, s >= 1)
+
 @variable(model, x_g[h in H, i in V0, j in V; (h == 1 && i == ins.n+1) || (h > 1 && i != ins.n+1)] >= 0)
 
-@objective(model, Min, sum(ins.c[i,j]*x[i,j] for i in V, j in V if i != j))
+# Definição da função objetivo
+@objective(model, Min, s + z)
+
+# @objective(model, Min, sum(ins.c[i,j]*x[i,j] for i in V, j in V if i != j))
 
 @constraint(model, root[j in V], x[ins.n+1, j] == x_g[1,ins.n+1, j])
 
 @constraint(model, root_out, sum(x_g[1,ins.n+1, j] for j in V) == 1)
 
 @constraint(model, bind_arc[i in V, j in V; i != j], x[i,j] == sum(x_g[h,i,j] for h in 2:ins.L))
+
+@constraint(model, budget, sum(ins.c[i,j]*x[i,j] for i in V for j in V if i != j) + sum(ins.c[i,j]*w[i,j] for i in V for j in V if i != j) <= ins.B)
+
+@constraints(model, begin
+    art[i in V, j in V; i != j], w[i,j] <= x[ins.n+1, i]
+    art2[i in V, j in V; i != j], w[i,j] <= x[ins.n+1, j]
+    central, sum(w[i,j] for i in V, j in V if i != j) == z
+end)   
+
+@constraint(model, mag[h in 1:ins.L], s >= sum(x_g[h,i,j] for i in 1:ins.n+1, j in i:ins.n if (h == 1 && i == ins.n+1) || (h > 1 && i != ins.n+1)))
 
 for i in 1:ins.n
     for j in 1:ins.n
@@ -134,6 +154,7 @@ end
 MOI.set(model, MOI.LazyConstraintCallback(), my_callback_function)
 optimize!(model)
 
+
 for i in 1:ins.n+1
     for j in 1:ins.n
         if i != j && value(x[i,j]) == 1
@@ -142,6 +163,7 @@ for i in 1:ins.n+1
     end 
 end 
 
+sum(ins.c[i,j]*value(x[i,j]) for i in V for j in V if i != j)
 objective_value(model)
 
 
@@ -153,4 +175,16 @@ for h in 1:ins.L+1
             end 
         end 
     end 
+end 
+
+for h in 1:ins.L
+    soma = 0
+    for i in 1:ins.n+1
+        for j in 1:ins.n
+            if ((h == 1 && i == ins.n+1) || (h > 1 && i != ins.n+1)) && value(x_g[h,i,j]) == 1
+                soma += value(x_g[h,i,j])
+            end 
+        end 
+    end 
+    println(soma)
 end 
