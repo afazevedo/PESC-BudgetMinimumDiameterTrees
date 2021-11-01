@@ -1,12 +1,4 @@
-include("../params.jl")
-include("../read.jl")
-
 using Gurobi, JuMP, MathOptInterface
-
-ins = read_from_files(g_params.file_name)
-
-
-
 
 function solve_spanning_mcf(ins::model_params)
     # Inicialização de um modelo 

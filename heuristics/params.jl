@@ -1,6 +1,6 @@
 using LightGraphs
-ins = read_from_files(g_params.file_name)
 
+ins = read_from_files(g_params.file_name)
 mutable struct heuristic_params{F<:Float64, S<:String, I<:Int64}
     spanTree::SimpleGraph{I}
     spanCost::F

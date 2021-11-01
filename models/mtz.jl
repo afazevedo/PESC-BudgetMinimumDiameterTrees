@@ -88,14 +88,7 @@ function my_callback_function(cb_data)
     end
 end
 
-# function solve_spanning_mtz(ins::model_params, spanTree)
 
-
-if isodd(min_d)
-    ins.L = (min_d+1)/2
-else 
-    ins.L = min_d/2
-end 
 
 # Inicialização de um modelo 
 model = Model(Gurobi.Optimizer)

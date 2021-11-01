@@ -1,16 +1,16 @@
 using GraphPlot 
 
-function MST(ins::model_params, pt)
+function MST(ins::model_params, hp::heuristic_params)
     g, cost = readGraph(ins)
     data = prim_mst(g, ins.c)
     
     for k in 1:ins.n-1
         i = src(data[k])
         j = dst(data[k])
-        add_edge!(pt.spanTree, i, j)
-        pt.spanCost = pt.spanCost + ins.c[i,j]
+        add_edge!(hp.spanTree, i, j)
+        hp.spanCost = hp.spanCost + ins.c[i,j]
     end
-    return pt.spanTree, pt.spanCost
+    return hp.spanTree, hp.spanCost
 end 
 
 function budgetCalculator(ins::model_params, percent::Float64)
@@ -40,17 +40,17 @@ function readGraph(ins::model_params)
     return g, cost
 end
 
-function plotGraph(graph)
+function plotGraph(graph::SimpleGraph)
     nodelabel = 1:nv(graph)
     p = gplot(graph, nodelabel = nodelabel)
     display(p)
 end
 
-function getDiameter(ins::model_params, graph)
-    pt.nodeCenter = LightGraphs.center(graph)
+function getDiameter(ins::model_params, graph::SimpleGraph)
+    nodeCenter = LightGraphs.center(graph)
     
-    if length(pt.nodeCenter) < 2 
-        p = bellman_ford_shortest_paths(graph, pt.nodeCenter[1])
+    if length(nodeCenter) < 2 
+        p = bellman_ford_shortest_paths(graph, nodeCenter[1])
 
         diam = 0
         for i in 1:ins.n
@@ -62,8 +62,8 @@ function getDiameter(ins::model_params, graph)
         end
         return 2*diam
     else 
-        p1 = bellman_ford_shortest_paths(graph, pt.nodeCenter[1])
-        p2 = bellman_ford_shortest_paths(graph, pt.nodeCenter[2])
+        p1 = bellman_ford_shortest_paths(graph, nodeCenter[1])
+        p2 = bellman_ford_shortest_paths(graph, nodeCenter[2])
         diam = 0
 
         for i in 1:ins.n
@@ -79,7 +79,7 @@ function getDiameter(ins::model_params, graph)
     end
 end 
 
-function check_cost(ins::model_params, G)
+function check_cost(ins::model_params, G::SimpleGraph)
     cost = 0
     for i in 1:nv(G)
         for j in (i+1):nv(G)

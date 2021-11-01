@@ -1,13 +1,12 @@
 using LightGraphs, Random, GraphPlot
 
 include("../read.jl")
+include("../src/utils.jl")
 include("params.jl")
-include("func.jl")
 
 ins = read_from_files(g_params.file_name)
 
-
-function OTT(ins, initial_node)
+function OTT(ins::model_params, hp::heuristic_params, initial_node::Int64)
     num_nodes = collect(1:ins.n)
     reverse_num_nodes = reverse(num_nodes)
 
@@ -17,10 +16,9 @@ function OTT(ins, initial_node)
         T = []
         Q = collect(V)
         chave = zeros(ins.n)
-        # rnd_node = rand(V)
         push!(T, initial_node)
         filter!(e->e≠initial_node, Q)
-        pt.spanTree = SimpleGraph(ins.n)
+        hp.spanTree = SimpleGraph(ins.n)
         while Q ≠ []
             c_min = 1000000000
             v = -1 
@@ -30,9 +28,7 @@ function OTT(ins, initial_node)
                 melhor = 1000000000000
                 
                 for i in T
-                    # println("Distancia de i", distance(i)+1, " Diametro:", D)
-                    # println("Custo:", check_cost(ins, pt.spanTree) + ins.c[i,j])
-                    if distance(i) + 1 <= D && check_cost(ins, pt.spanTree) + ins.c[i,j] <= ins.B 
+                    if distance(i) + 1 <= D && check_cost(ins, hp.spanTree) + ins.c[i,j] <= ins.B 
                         melhor = ins.c[i,j] 
                         chave[j] = i 
                     end 
@@ -54,7 +50,7 @@ function OTT(ins, initial_node)
             end            
             push!(T, v)
             filter!(e->e≠v, Q)
-            add_edge!(pt.spanTree, u, v)
+            add_edge!(hp.spanTree, u, v)
         end
         if !flag 
             return D-1
@@ -63,15 +59,9 @@ function OTT(ins, initial_node)
     end 
 end
 
-function distance(node)
-    aux = gdistances(pt.spanTree, node)
+function distance(hp::heuristic_params, node::Int64)
+    aux = gdistances(hp.spanTree, node)
     filter!(e->e≠9223372036854775807, aux)
     return maximum(aux)
-end
-
-function plotGraph(graph)
-    nodelabel = 1:nv(graph)
-    p = gplot(graph, nodelabel = nodelabel)
-    display(p)
 end
 
