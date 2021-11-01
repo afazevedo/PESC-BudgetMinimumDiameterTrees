@@ -27,17 +27,15 @@ end
 
 function readGraph(ins::model_params)
     g = SimpleGraph(ins.n)
-    cost = zeros(ins.n, ins.n)
 
     for i in 1:ins.n 
         for j in (i+1):ins.n
             if i != j && ins.c[i,j] > g_params.eps
-                add_edge!(g, i, j)
-                cost[i,j] = ins.c[i,j] 
+                add_edge!(g, i, j) 
             end 
         end 
     end
-    return g, cost
+    return g
 end
 
 function plotGraph(graph::SimpleGraph)

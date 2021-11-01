@@ -59,8 +59,8 @@ function OTT(ins::model_params, hp::heuristic_params, initial_node::Int64)
     end 
 end
 
-function distance(hp::heuristic_params, node::Int64)
-    aux = gdistances(hp.spanTree, node)
+function distance(s_tree, node::Int64)
+    aux = gdistances(s_tree, node)
     filter!(e->e≠9223372036854775807, aux)
     return maximum(aux)
 end
