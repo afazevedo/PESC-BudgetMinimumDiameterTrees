@@ -6,12 +6,15 @@ mutable struct heuristic_params{F<:Float64, S<:String, I<:Int64}
     spanTree::SimpleGraph{I}
     spanCost::F
     tree_diameter::I
+    nodeCenter::Array{I,1}
     which_heuristic::S
 end
 
 grafo_inicial = SimpleGraph(ins.n)
 custo_inicial = 0.0
 diameter_tree = 0
+node_center = []
 which_heuristic = "ott"
 
-hp = heuristic_params{Float64, String, Int64}(grafo_inicial, custo_inicial, diameter_tree, which_heuristic)
+
+hp = heuristic_params{Float64, String, Int64}(grafo_inicial, custo_inicial, diameter_tree, node_center, which_heuristic)

@@ -3,8 +3,11 @@ using LightGraphs, Random
 include("../src/read.jl")
 include("params.jl")
 include("../src/utils.jl")
+# include("busca-local.jl")
 
-ins.B = 252
+# g_params.file_name = pwd()*"\\instances\\$type_of_tree\\c_v10_a45_d4.txt"
+# ins = read_from_files(g_params.file_name)
+# ins.B = 252
 
 function rgh(ins::model_params, hp::heuristic_params)
     hp.spanTree = readGraph(ins)
@@ -67,7 +70,13 @@ function rgh(ins::model_params, hp::heuristic_params)
             best_tree = copy(optimal_tree)
         end
     end 
-    return best_diameter_viable
+    return best_diameter_viable, best_tree
 end
 
 
+# hp.tree_diameter, hp.spanTree = rgh(ins, hp)
+# hp.spanCost = check_cost(ins, best_tree)
+
+# plotGraph(hp.spanTree)
+
+# decreaseDiameter(ins, hp)
