@@ -77,7 +77,7 @@ function getDiameter(ins::model_params, graph::SimpleGraph)
     end
 end 
 
-function check_cost(ins::model_params, G::SimpleGraph)
+function check_cost(ins::model_params, G)
     cost = 0
     for i in 1:nv(G)
         for j in (i+1):nv(G)

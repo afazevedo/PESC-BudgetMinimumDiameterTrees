@@ -3,8 +3,6 @@ using LightGraphs, Random, GraphPlot
 include("../src/utils.jl")
 include("params.jl")
 
-ins = read_from_files(g_params.file_name)
-
 function OTT(ins::model_params, hp::heuristic_params, initial_node::Int64)
     num_nodes = collect(1:ins.n)
     reverse_num_nodes = reverse(num_nodes)
@@ -52,7 +50,7 @@ function OTT(ins::model_params, hp::heuristic_params, initial_node::Int64)
             add_edge!(hp.spanTree, u, v)
         end
         if !flag 
-            return D-1
+            return D+1
             break 
         end 
     end 

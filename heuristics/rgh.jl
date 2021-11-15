@@ -14,15 +14,15 @@ function rgh(ins::model_params, hp::heuristic_params)
     num_nodes = collect(1:ins.n)
     reverse_num_nodes = reverse(2:ins.n)
     best_diameter_viable = MAX_ITER
-    best_tree = SimpleGraph{Int64}
+    best_tree = SimpleGraph(ins.n)
 
     for D in reverse_num_nodes
+        optimal_tree = SimpleGraph(ins.n)
         flag = true
         T = []
         Q = collect(1:ins.n)
         p = fill(MAX_ITER, ins.n)
         num_nodes = collect(1:ins.n)
-        optimal_tree = SimpleGraph(ins.n)
 
         if D % 2 == 0
             v = rand(num_nodes)
@@ -70,6 +70,7 @@ function rgh(ins::model_params, hp::heuristic_params)
             best_tree = copy(optimal_tree)
         end
     end 
+    
     return best_diameter_viable, best_tree
 end
 

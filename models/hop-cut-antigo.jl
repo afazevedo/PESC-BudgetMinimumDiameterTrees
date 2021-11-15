@@ -94,9 +94,9 @@ model = Model(Gurobi.Optimizer)
 
 # Atributos do modelo
 MOI.set(model, MOI.RawParameter("LazyConstraints"), 1)
-# set_optimizer_attribute(model, "Cuts", 0)
-# set_optimizer_attribute(model, "Presolve", 0)
-# set_optimizer_attribute(model, "Heuristics", 0)
+set_optimizer_attribute(model, "Cuts", 0)
+set_optimizer_attribute(model, "Presolve", 0)
+set_optimizer_attribute(model, "Heuristics", 0)
 # set_optimizer_attribute(model, "Threads", 1)
 # set_optimizer_attribute(model, "OutputFlag", 0)
 
@@ -108,86 +108,31 @@ ins.L = 3
 V = 1:ins.n
 V0 = 1:ins.n+1
 H = 1:ins.L+1
-ins.B = 252
 
 # Definição das variáveis de decisão
 @variable(model, x[i in 1:ins.n+1, j in 1:ins.n; i != j], Bin)
-@variable(model, z, Bin)
-# @variable(model, 0 <= u[i in V0] <= ins.L+1, Int)
-@variable(model, 0 <= w[i in V, j in V] <= 1, Int)
-@variable(model, s >= 1, Int)
-@variable(model, x_g[h in 1:ins.L+1, i in V0, j in V;
-    	(h == 1 && i == ins.n+1) || (h > 1 && i != ins.n+1)], Bin
-    )
 
-# Definição da função objetivo
-@objective(model, Min, 2*(s-1) + z)
+@variable(model, x_g[h in H, i in V0, j in V; (h == 1 && i == ins.n+1) || (h > 1 && i != ins.n+1)] >= 0)
 
-# @objective(model, Min, sum(x[i,j]*ins.c[i,j] for i in V, j in V if i != j))
-
-@constraint(model, central,
-    sum(w[i,j] for i in V, j in V if i != j) == z
-)
-
-@constraint(model, art[i in V, j in V; i != j],
-        w[i,j] <= x[ins.n+1, i]
-    )
-
-@constraint(model, art2[i in V, j in V; i != j],
-        w[i,j] <= x[ins.n+1, j]
-)
-
-@constraint(model, root_out,
-    sum(x_g[1, ins.n+1, j] for j in V) == z + 1
-)
-
-
-@constraint(model, teste2[i in V, j in V; i != j], w[i,j] + w[j,i] + x[i,j] + x[j,i] <= 1)
+@objective(model, Min, sum(ins.c[i,j]*x[i,j] for i in V, j in V if i != j))
 
 @constraint(model, root[j in V], x[ins.n+1, j] == x_g[1,ins.n+1, j])
 
+@constraint(model, root_out, sum(x_g[1,ins.n+1, j] for j in V) == 1)
+
 @constraint(model, bind_arc[i in V, j in V; i != j], x[i,j] == sum(x_g[h,i,j] for h in 2:ins.L))
-
-@constraint(model, budget,
-    sum(ins.c[i,j]*x_g[h,i,j] for h in 1:ins.L+1, i in V, j in V if i != j && h > 1 && i != ins.n+1) + sum(ins.c[i,j]*w[i,j] for i in V, j in V if i != j) <= ins.B
-)
-
-
-# @constraints(model, begin
-#     mtz[j in V], u[ins.n+1] - u[j] + (ins.L+1)*x[ins.n+1, j] <= ins.L
-#     mtz1[i in V, j in V; i != j], u[i] - u[j] + (ins.L+1)*x[i,j] + (ins.L-1)*x[j,i] <= ins.L
-#     # mtz2[i in V], u[i] - u[ins.n+1] + (ins.L-1)*x[ins.n+1,i] <= ins.L
-# end)
-
-# @constraint(model, mag[i in V], s >= u[i])
-
-@constraint(model, mag[h in 2:ins.L+1, i in V, j in V; i != j], 
-        s >= h*x_g[h,i,j]
-    )
-
 
 for i in 1:ins.n
     for j in 1:ins.n
-        if ins.c[i,j] < g_params.eps && i != j
-            set_upper_bound(w[i,j], 0.0)
-            set_lower_bound(w[i,j], 0.0)
-            for h in 1:ins.L+1
-                if (h == 1 && i == ins.n+1) || (h > 1 && i != ins.n+1)
-                    set_upper_bound(x_g[h,i,j], 0.0)
-                    set_lower_bound(x_g[h,i,j], 0.0)
-                end
-            end
-        end
-    end
-end
-# set_upper_bound(u[ins.n+1], 0.0)
-# set_lower_bound(u[ins.n+1], 0.0)
-
-
+        if i != j && ins.c[i,j] <= 0 
+            set_upper_bound(x[i,j], 0.0)
+            set_lower_bound(x[i,j], 0.0)
+        end 
+    end 
+end 
 
 MOI.set(model, MOI.LazyConstraintCallback(), my_callback_function)
 optimize!(model)
-
 
 for i in 1:ins.n+1
     for j in 1:ins.n
@@ -197,14 +142,7 @@ for i in 1:ins.n+1
     end 
 end 
 
-
-value(z)
-value(s)
-
-
-sum(ins.c[i,j]*value(x[i,j]) for i in V for j in V if i != j) + sum(ins.c[i,j]*value(w[i,j]) for i in V, j in V if i != j)
 objective_value(model)
-
 
 for h in 1:ins.L+1
     for i in 1:ins.n+1
@@ -214,16 +152,4 @@ for h in 1:ins.L+1
             end 
         end 
     end 
-end 
-
-for h in 1:ins.L
-    soma = 0
-    for i in 1:ins.n+1
-        for j in 1:ins.n
-            if ((h == 1 && i == ins.n+1) || (h > 1 && i != ins.n+1)) && value(x_g[h,i,j]) == 1
-                soma += value(x_g[h,i,j])
-            end 
-        end 
-    end 
-    println(soma)
 end 

@@ -5,9 +5,9 @@ include("params.jl")
 include("../src/utils.jl")
 include("rgh.jl")
 
-g_params.file_name = pwd()*"\\instances\\$type_of_tree\\c_v10_a45_d4.txt"
-ins = read_from_files(g_params.file_name)
-ins.B = 252
+# g_params.file_name = pwd()*"\\instances\\$type_of_tree\\c_v10_a45_d4.txt"
+# ins = read_from_files(g_params.file_name)
+# ins.B = 252
 
 function labelNode(ins::model_params, hp::heuristic_params)
     labelNodes = zeros(ins.n)
@@ -78,6 +78,4 @@ function decreaseDiameter(ins::model_params, hp::heuristic_params)
     return hp.spanTree, hp.spanCost, hp.tree_diameter 
 end
 
-hp.tree_diameter, hp.spanTree = rgh(ins, hp)
-hp.spanCost = check_cost(ins, hp.spanTree)
-hp.spanTree, hp.spanCost, hp.tree_diameter = decreaseDiameter(ins, hp)
+
