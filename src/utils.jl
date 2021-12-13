@@ -1,17 +1,17 @@
 using GraphPlot 
 
-function MST(ins::model_params, hp::heuristic_params)
-    g, cost = readGraph(ins)
-    data = prim_mst(g, ins.c)
+# function MST(ins::model_params, hp::heuristic_params)
+#     g, cost = readGraph(ins)
+#     data = prim_mst(g, ins.c)
     
-    for k in 1:ins.n-1
-        i = src(data[k])
-        j = dst(data[k])
-        add_edge!(hp.spanTree, i, j)
-        hp.spanCost = hp.spanCost + ins.c[i,j]
-    end
-    return hp.spanTree, hp.spanCost
-end 
+#     for k in 1:ins.n-1
+#         i = src(data[k])
+#         j = dst(data[k])
+#         add_edge!(hp.spanTree, i, j)
+#         hp.spanCost = hp.spanCost + ins.c[i,j]
+#     end
+#     return hp.spanTree, hp.spanCost
+# end 
 
 function budgetCalculator(ins::model_params, percent::Float64)
     sum = 0
@@ -38,13 +38,13 @@ function readGraph(ins::model_params)
     return g
 end
 
-function plotGraph(graph::SimpleGraph)
+function plotGraph(graph)
     nodelabel = 1:nv(graph)
     p = gplot(graph, nodelabel = nodelabel)
     display(p)
 end
 
-function getDiameter(ins::model_params, graph::SimpleGraph)
+function getDiameter(ins::model_params, graph)
     nodeCenter = LightGraphs.center(graph)
     
     if length(nodeCenter) < 2 
