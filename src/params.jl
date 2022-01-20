@@ -27,6 +27,6 @@ time_limit = 1200
 type_of_model = "mcf"
 warm_start = 0
 heuristic = 1
-max_cuts = 5
+max_cuts = 10
 
 g_params = general_params{Float64, String, Bool}(file, eps, time_limit, type_of_model, type_of_tree, warm_start, heuristic, max_cuts)
